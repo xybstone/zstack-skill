@@ -14,15 +14,38 @@ ZStack 提供多种认证方式，支持不同的使用场景。
 
 ### 登录获取 Session
 
+> ⚠️ **重要**：API 登录时密码需要使用 **SHA-512 哈希**，不是明文！
+
 ```bash
-POST /v1/accounts/login
+PUT /v1/accounts/login
 
 {
   "logInByAccount": {
     "accountName": "admin",
-    "password": "password"
+    "password": "<SHA-512 哈希后的密码>"
   }
 }
+```
+
+#### 密码哈希示例
+
+```bash
+# 生成 SHA-512 哈希
+echo -n "password" | sha512sum | awk '{print $1}'
+# 输出: b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86
+```
+
+#### 完整登录示例
+
+```bash
+curl -s -X PUT "http://<zstack-server>:8080/zstack/v1/accounts/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logInByAccount": {
+      "accountName": "admin",
+      "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"
+    }
+  }'
 ```
 
 ### 响应

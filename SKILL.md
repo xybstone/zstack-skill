@@ -28,14 +28,34 @@ export ZSTACK_SESSION="<session-uuid>"
 
 ### Authentication
 
+> ⚠️ **重要**：API 登录时密码需要使用 **SHA-512 哈希**，不是明文！
+
 ```bash
-# Login and get session
-curl -X POST "$ZSTACK_API/accounts/login" \
+# 生成密码哈希
+PASSWORD_HASH=$(echo -n "password" | sha512sum | awk '{print $1}')
+
+# Login and get session (使用 PUT 方法)
+curl -X PUT "$ZSTACK_API/accounts/login" \
   -H "Content-Type: application/json" \
-  -d '{"logInByAccount":{"accountName":"admin","password":"password"}}'
+  -d '{"logInByAccount":{"accountName":"admin","password":"'$PASSWORD_HASH'"}}'
 
 # Use session in subsequent requests
 curl -H "Authorization: OAuth $ZSTACK_SESSION" "$ZSTACK_API/vm-instances"
+```
+
+### 使用 zstack-cli (推荐)
+
+zstack-cli 会自动处理密码哈希和 Session 管理，更方便：
+
+```bash
+# 登录
+zstack-cli LogInByAccount accountName=admin password=password
+
+# 查询云主机
+zstack-cli QueryVmInstance
+
+# 带条件查询
+zstack-cli QueryVmInstance conditions="state=Running"
 ```
 
 ### VM Operations
