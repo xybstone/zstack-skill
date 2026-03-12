@@ -124,14 +124,24 @@ log_info "OpenClaw 安装完成：$(openclaw --version)"
 log_info "Step 5/7: 安装中国 IM 插件集..."
 
 if [ ! -d "/opt/openclaw-china" ]; then
-  git clone https://github.com/BytePioneer-AI/openclaw-china.git /opt/openclaw-china
-  cd /opt/openclaw-china
-  npm install --registry=https://registry.npmmirror.com
-  npm run build
+  log_info "尝试从 GitHub 克隆 openclaw-china..."
   
-  # 安装插件到 OpenClaw
-  openclaw plugins install -l ./packages/channels
-  log_info "中国 IM 插件集安装完成"
+  # 设置 Git 超时
+  export GIT_CURL_VERBOSE=1
+  export GIT_TRACE=1
+  
+  if timeout 60 git clone --depth 1 https://github.com/BytePioneer-AI/openclaw-china.git /opt/openclaw-china 2>&1; then
+    cd /opt/openclaw-china
+    npm install --registry=https://registry.npmmirror.com || log_warn "npm install 失败，跳过"
+    npm run build || log_warn "npm build 失败，跳过"
+    
+    # 安装插件到 OpenClaw
+    openclaw plugins install -l ./packages/channels || log_warn "插件安装失败，跳过"
+    log_info "中国 IM 插件集安装完成"
+  else
+    log_warn "GitHub 连接超时，跳过 openclaw-china 安装"
+    log_warn "你可以稍后手动安装：git clone https://github.com/BytePioneer-AI/openclaw-china.git /opt/openclaw-china"
+  fi
 else
   log_info "中国 IM 插件集已安装，跳过"
 fi
