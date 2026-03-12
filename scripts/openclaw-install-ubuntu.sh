@@ -155,8 +155,10 @@ if ! id "openclaw" &>/dev/null; then
   log_info "创建 openclaw 用户成功"
 fi
 
-# 初始化 openclaw 配置
-su - openclaw -c "openclaw gateway install"
+# 初始化配置目录（不用 su，直接创建目录）
+OPENCLAW_HOME=/home/openclaw/.openclaw
+mkdir -p "$OPENCLAW_HOME/config"
+chown -R openclaw:openclaw /home/openclaw/.openclaw
 
 # 配置 systemd 服务
 cat > /etc/systemd/system/openclaw.service <<'EOF'
@@ -222,26 +224,43 @@ ufw status verbose
 # 8. 安全加固配置
 log_info "配置安全加固..."
 
-# Gateway 认证
-su - openclaw -c "openclaw config set gateway.auth.mode token"
 INITIAL_TOKEN=$(openssl rand -hex 16)
-su - openclaw -c "openclaw config set gateway.auth.token '$INITIAL_TOKEN'"
+OPENCLAW_CFG=/home/openclaw/.openclaw/config
 
-# 绑定 localhost
-su - openclaw -c "openclaw config set gateway.host 127.0.0.1"
-su - openclaw -c "openclaw config set gateway.port 18789"
+# 直接写入配置文件，不用 su + openclaw config set（避免 dbus 问题）
+mkdir -p "$OPENCLAW_CFG"
 
-# 工具权限设置为 messaging（最安全）
-su - openclaw -c "openclaw config set tools.profile messaging"
+cat > "$OPENCLAW_CFG/gateway.json" <<EOF
+{
+  "auth": {
+    "mode": "token",
+    "token": "$INITIAL_TOKEN"
+  },
+  "host": "127.0.0.1",
+  "port": 18789
+}
+EOF
 
-# 配置命令审批门
-su - openclaw -c "openclaw config set tools.approval.enabled true"
-su - openclaw -c 'openclaw config set tools.approval.patterns '\''["rm -rf", "sudo", "chmod 777", "curl.*|.*sh", "wget.*|.*sh", "dd if=", "mkfs", "shutdown", "reboot"]'\'''
+cat > "$OPENCLAW_CFG/tools.json" <<EOF
+{
+  "profile": "messaging",
+  "approval": {
+    "enabled": true,
+    "patterns": ["rm -rf", "sudo", "chmod 777", "curl.*|.*sh", "wget.*|.*sh", "dd if=", "mkfs", "shutdown", "reboot"]
+  }
+}
+EOF
 
-# 禁用 ClawHub 在线安装
-su - openclaw -c "openclaw config set plugins.hub.enabled false"
-su - openclaw -c "openclaw config set plugins.allowLocalOnly true"
+cat > "$OPENCLAW_CFG/plugins.json" <<EOF
+{
+  "hub": {
+    "enabled": false
+  },
+  "allowLocalOnly": true
+}
+EOF
 
+chown -R openclaw:openclaw /home/openclaw/.openclaw
 log_info "安全加固配置完成"
 
 # 9. 写入首次启动标记
