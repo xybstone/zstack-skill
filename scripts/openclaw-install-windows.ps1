@@ -93,19 +93,34 @@ Log-Info "npm mirror configured"
 Log-Info "Step 3/7: Installing Git..."
 if (-Not (Get-Command git -ErrorAction SilentlyContinue)) {
     Log-Info "Downloading Git installer..."
-    $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.48.1.windows.1/Git-2.48.1-64-bit.exe"
+    # Try multiple mirrors
+    $gitUrls = @(
+        "https://mirrors.tuna.tsinghua.edu.cn/github-release/git-for-windows/git/LatestRelease/Git-2.48.1-64-bit.exe",
+        "https://mirrors.aliyun.com/github-release/git-for-windows/git/LatestRelease/Git-2.48.1-64-bit.exe",
+        "https://github.com/git-for-windows/git/releases/download/v2.48.1.windows.1/Git-2.48.1-64-bit.exe"
+    )
     $gitExe = "$env:TEMP\git-install.exe"
+    $gitInstalled = $false
     
-    try {
-        Invoke-WebRequest -Uri $gitUrl -OutFile $gitExe -UseBasicParsing
-        Log-Info "Installing Git..."
-        Start-Process $gitExe -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
-        Remove-Item $gitExe -Force -ErrorAction SilentlyContinue
-        Refresh-Path
-        Log-Info "Git installed"
-    } catch {
-        Log-Warn "Failed to install Git: $_"
-        Log-Info "You can install Git manually from: https://git-scm.com/download/win"
+    foreach ($url in $gitUrls) {
+        try {
+            Log-Info "Trying mirror: $url"
+            Invoke-WebRequest -Uri $url -OutFile $gitExe -UseBasicParsing -TimeoutSec 120
+            Log-Info "Installing Git..."
+            Start-Process $gitExe -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+            Remove-Item $gitExe -Force -ErrorAction SilentlyContinue
+            Refresh-Path
+            $gitInstalled = $true
+            Log-Info "Git installed"
+            break
+        } catch {
+            Log-Warn "Mirror failed: $url"
+        }
+    }
+    
+    if (-Not $gitInstalled) {
+        Log-Warn "All Git mirrors failed. Please install manually from: https://git-scm.com/download/win"
+        Log-Info "Continuing without Git..."
     }
 } else {
     Log-Info "Git already installed: $(git --version)"
