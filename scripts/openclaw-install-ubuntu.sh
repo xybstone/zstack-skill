@@ -46,7 +46,7 @@ log_info "Step 1/7: 更新系统并安装基础依赖..."
 apt update
 DEBIAN_FRONTEND=noninteractive apt upgrade -y
 DEBIAN_FRONTEND=noninteractive apt install -y curl wget git vim net-tools \
-  ufw python3 python3-pip jq unzip xz tar gzip ca-certificates
+  ufw python3 python3-pip jq unzip xz-utils gzip ca-certificates
 
 # 2. 安装 Node.js 22 LTS
 log_info "Step 2/7: 安装 Node.js 22 LTS..."
