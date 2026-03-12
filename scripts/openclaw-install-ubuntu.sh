@@ -51,21 +51,42 @@ DEBIAN_FRONTEND=noninteractive apt install -y curl wget git vim net-tools \
 # 2. 安装 Node.js 22 LTS
 log_info "Step 2/7: 安装 Node.js 22 LTS..."
 
-# 检查是否已安装 Node.js
+# 检查是否已安装合适版本的 Node.js
+NODE_OK=false
 if command -v node &> /dev/null; then
   NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
   if [ "$NODE_VERSION" -ge 22 ]; then
     log_info "Node.js 版本已满足要求：$(node -v)"
+    NODE_OK=true
   else
-    log_warn "Node.js 版本过低：$(node -v)，需要升级"
+    log_warn "Node.js 版本过低：$(node -v)，需要升级至 22"
   fi
-else
-  # 使用 NodeSource 安装 Node.js 22
+fi
+
+if [ "$NODE_OK" = false ]; then
+  log_info "安装 Node.js 22 LTS via NodeSource..."
+  
+  # 先移除旧版本
+  apt remove -y nodejs npm 2>/dev/null || true
+  
+  # 安装 NodeSource 22
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   DEBIAN_FRONTEND=noninteractive apt install -y nodejs
   
+  # 刷新环境变量
+  export PATH="/usr/bin:$PATH"
+  hash -r
+  
   log_info "Node.js 安装完成：$(node -v)"
   log_info "npm 版本：$(npm -v)"
+fi
+
+# 确保 npm 可用
+if ! command -v npm &> /dev/null; then
+  log_error "npm 未正确安装，尝试重新安装..."
+  DEBIAN_FRONTEND=noninteractive apt install -y npm
+  export PATH="/usr/bin:$PATH"
+  hash -r
 fi
 
 # 3. 配置 npm 国内镜像
