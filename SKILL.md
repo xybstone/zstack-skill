@@ -1,16 +1,47 @@
 ---
 name: zstack
-description: "Manage ZStack Cloud resources via REST API. Create/query/manage VMs, volumes, networks, images, and more. Use for cloud infrastructure automation."
+description: "Manage ZStack Cloud resources via REST API or MCP protocol. Supports both direct API calls and MCP-based AI integration."
 metadata:
   openclaw:
     emoji: "☁️"
     requires:
       bins: ["curl", "jq"]
+    optional:
+      bins: ["mcporter", "zstack-mcp-server"]
 ---
 
 # ZStack Cloud Skill
 
-Manage ZStack Cloud infrastructure via REST API.
+Manage ZStack Cloud infrastructure via REST API or MCP protocol.
+
+## 两种方式
+
+### 方式一：MCP 协议（推荐用于 AI 集成）
+
+通过 MCP Server 调用 ZStack API，自动处理认证、错误和响应限制。
+
+```bash
+# 安装 MCP Server
+pipx install zstack-mcp-server
+
+# 配置认证
+bash mcp/scripts/configure.sh
+
+# 注册到 mcporter
+bash mcp/scripts/register-mcp.sh
+
+# 使用示例
+mcporter call zstack-mcp.search_api --args '{"keywords":["Query","Vm"]}'
+mcporter call zstack-mcp.execute_api --args '{"api_name":"QueryVmInstance","parameters":{"conditions":[]}}'
+```
+
+详细文档：[mcp/SKILL.md](mcp/SKILL.md)
+
+---
+
+### 方式二：直接 API 调用（传统方式）
+
+直接使用 curl 调用 ZStack REST API。
 
 ## Environment Setup
 

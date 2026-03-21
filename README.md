@@ -6,12 +6,39 @@ ZStack Cloud API 操作技能 - 用于 OpenClaw 的云平台管理技能包。
 
 ZStack 是一个开源的云计算 IaaS 软件，提供完整的云平台管理能力。本技能包整理了 ZStack API 的核心操作，方便通过 OpenClaw 进行云资源管理。
 
+## 快速开始
+
+### 推荐：使用 MCP 协议（AI 集成）
+
+MCP 方式更适合 AI 自动化调用，自动处理认证、错误和响应限制。
+
+```bash
+# 查看 MCP 文档
+cat mcp/SKILL.md
+
+# 快速配置
+bash mcp/scripts/configure.sh
+bash mcp/scripts/register-mcp.sh
+```
+
+### 传统：直接 API 调用
+
+直接使用 curl 调用 ZStack REST API，适合脚本和手动操作。
+
 ## 文档结构
 
 ```
 zstack-skill/
 ├── README.md                    # 本文件
 ├── SKILL.md                     # OpenClaw Skill 定义
+├── mcp/                         # MCP 协议集成（新增）
+│   ├── SKILL.md                 # MCP Skill 文档
+│   ├── scripts/
+│   │   ├── configure.sh         # MCP 认证配置
+│   │   ├── register-mcp.sh      # 注册到 mcporter
+│   │   └── test-connection.sh   # 连接测试
+│   └── config/
+│       └── zstack.env           # MCP 配置文件
 ├── docs/
 │   ├── 01-api-architecture.md   # API 架构概述
 │   ├── 02-authentication.md     # 认证机制
